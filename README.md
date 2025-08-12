@@ -1,5 +1,5 @@
 ## Personal Expense Tracker
-A full-stack personal expense tracker web application built with ReactJS (frontend), NodeJS + Express (backend), and SQLite (database). It allows users to register, log in, add, edit, delete, and view expenses with category-wise analytics.
+A full-stack personal expense tracker web application built with ReactJS (frontend), NodeJS + Express (backend), and MySql (database). It allows users to register, log in, add, edit, delete, and view expenses with category-wise analytics.
 
 ## Features
 - User authentication with JSON-based credential storage
