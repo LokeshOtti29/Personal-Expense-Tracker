@@ -136,7 +136,7 @@ const Table = () => {
               <th>Date</th>
               <th>Category</th>
               <th>Description</th>
-              <th className="text-end">Amount ($)</th>
+              <th className="text-end">Amount</th>
               <th>Actions</th>
             </tr>
           </thead>
