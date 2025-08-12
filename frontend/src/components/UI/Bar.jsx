@@ -10,13 +10,13 @@ import { Bar as BarChart } from "react-chartjs-2";
 
 ChartJS.register(ArcElement, CategoryScale, LinearScale, BarElement);
 
-const Bar = () => {
+const Bar = ({ data }) => {
   const monthlyData = {
-    labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+    labels: data?.map((item) => item.month) || [],
     datasets: [
       {
         label: "Monthly Expenses",
-        data: [500, 400, 700, 300, 600, 800],
+        data: data?.map((item) => item.total) || [],
         backgroundColor: "#36A2EB",
         borderRadius: 5,
       },

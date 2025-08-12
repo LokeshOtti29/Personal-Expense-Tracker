@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 
 const categories = ["Food", "Rent", "Travel", "Shopping", "Others"];
+const formatDate = (isoString) => (isoString ? isoString.split("T")[0] : "");
 
 const EditExpenseModal = ({ show, onClose, expense, onSave }) => {
   const [editExpense, setEditExpense] = useState({
@@ -24,7 +25,7 @@ const EditExpenseModal = ({ show, onClose, expense, onSave }) => {
     }));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (
       !editExpense.date ||
       !editExpense.description ||
@@ -34,7 +35,39 @@ const EditExpenseModal = ({ show, onClose, expense, onSave }) => {
       alert("Please fill all fields");
       return;
     }
-    onSave(editExpense);
+
+    try {
+      const token = localStorage.getItem("token");
+
+      const payload = {
+        ...editExpense,
+        date: formatDate(editExpense.date),
+      };
+
+      const response = await fetch(
+        `http://localhost:5000/expenses/edit/${editExpense.id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token ? `Bearer ${token}` : "",
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to update expense");
+      }
+
+      alert("Expense updated successfully!");
+      onSave(editExpense);
+      onClose();
+    } catch (error) {
+      alert(error.message);
+    }
   };
 
   if (!show) return null;
@@ -63,7 +96,7 @@ const EditExpenseModal = ({ show, onClose, expense, onSave }) => {
                 type="date"
                 name="date"
                 className="form-control"
-                value={editExpense.date}
+                value={formatDate(editExpense.date)}
                 onChange={handleChange}
               />
             </div>

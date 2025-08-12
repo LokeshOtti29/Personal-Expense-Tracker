@@ -3,7 +3,7 @@ import db from "../config/db.js";
 // Add Expense
 export async function addExpense(req, res) {
   try {
-    const user_id = req.user.id; // get from JWT decoded token
+    const user_id = req.user.id;
     const { amount, category, description, date } = req.body;
 
     if (!amount || !category || !date) {
@@ -27,14 +27,13 @@ export async function addExpense(req, res) {
 export async function editExpense(req, res) {
   try {
     const expenseId = req.params.id;
-    const user_id = req.user.id; // from JWT middleware
+    const user_id = req.user.id;
     const { amount, category, description, date } = req.body;
 
     if (!amount || !category || !date) {
       return res.status(400).json({ message: "Required fields missing" });
     }
 
-    // Update only if expense belongs to user (security)
     const query = `
       UPDATE expenses 
       SET amount = ?, category = ?, description = ?, date = ?
@@ -66,7 +65,7 @@ export async function editExpense(req, res) {
 export async function deleteExpense(req, res) {
   try {
     const expenseId = req.params.id;
-    const user_id = req.user.id; // from JWT middleware
+    const user_id = req.user.id;
 
     const [result] = await db.query(
       "DELETE FROM expenses WHERE id = ? AND user_id = ?",
@@ -97,7 +96,34 @@ export async function getExpenses(req, res) {
       [user_id]
     );
 
-    res.json({ expenses });
+    const [categoryData] = await db.query(
+      `SELECT category, SUM(amount) AS total 
+       FROM expenses 
+       WHERE user_id = ? 
+       GROUP BY category`,
+      [user_id]
+    );
+
+    const [monthlyData] = await db.query(
+      `SELECT DATE_FORMAT(date, '%Y-%m') AS month, SUM(amount) AS total 
+       FROM expenses 
+       WHERE user_id = ? 
+       GROUP BY month 
+       ORDER BY month`,
+      [user_id]
+    );
+
+    const doughnutData = categoryData.map((row) => ({
+      category: row.category,
+      total: Number(row.total),
+    }));
+
+    const barData = monthlyData.map((row) => ({
+      month: row.month,
+      total: Number(row.total),
+    }));
+
+    res.json({ expenses, dashboard: { doughnutData, barData } });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

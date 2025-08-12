@@ -1,63 +1,42 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import EditExpenseModal from "./Update";
 import AddExpenseModal from "./Add";
-
-const initialExpenses = [
-  {
-    date: "2025-01-05",
-    category: "Food",
-    description: "Groceries",
-    amount: 50,
-  },
-  {
-    date: "2025-01-08",
-    category: "Rent",
-    description: "January Rent",
-    amount: 500,
-  },
-  { date: "2025-01-10", category: "Travel", description: "Taxi", amount: 20 },
-  {
-    date: "2025-01-15",
-    category: "Shopping",
-    description: "Clothes",
-    amount: 120,
-  },
-  {
-    date: "2025-01-20",
-    category: "Others",
-    description: "Gym Membership",
-    amount: 40,
-  },
-  { date: "2025-01-22", category: "Food", description: "Dinner", amount: 30 },
-  {
-    date: "2025-01-25",
-    category: "Rent",
-    description: "Security Deposit",
-    amount: 1000,
-  },
-  {
-    date: "2025-01-27",
-    category: "Travel",
-    description: "Flight Ticket",
-    amount: 300,
-  },
-  {
-    date: "2025-01-29",
-    category: "Shopping",
-    description: "Shoes",
-    amount: 80,
-  },
-];
 
 const categories = ["Food", "Rent", "Travel", "Shopping", "Others"];
 
 const Table = () => {
-  const [expenses, setExpenses] = useState(initialExpenses);
+  const [expenses, setExpenses] = useState([]);
   const [filter, setFilter] = useState("All");
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [currentEditIndex, setCurrentEditIndex] = useState(null);
+
+  useEffect(() => {
+    fetchExpenses();
+  }, []);
+
+  const fetchExpenses = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch("http://localhost:5000/expenses/list", {
+        headers: {
+          Authorization: token ? `Bearer ${token}` : "",
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to fetch expenses");
+      }
+
+      setExpenses(data.expenses || []);
+      setFilter("All");
+    } catch (error) {
+      alert(error.message);
+    }
+  };
 
   const filteredExpenses =
     filter === "All" ? expenses : expenses.filter((e) => e.category === filter);
@@ -74,24 +53,47 @@ const Table = () => {
     setShowEditModal(false);
   };
 
-  const handleAddExpense = (expense) => {
-    setExpenses((prev) => [...prev, expense]);
+  const handleAddExpenseSuccess = (newExpense) => {
+    fetchExpenses();
     setFilter("All");
     closeAddModal();
   };
 
   const handleSaveEdit = (updatedExpense) => {
-    setExpenses((prev) => {
-      const updated = [...prev];
-      updated[currentEditIndex] = updatedExpense;
-      return updated;
-    });
+    fetchExpenses();
     closeEditModal();
   };
 
-  const handleDelete = (index) => {
-    if (window.confirm("Are you sure you want to delete this expense?")) {
-      setExpenses((prev) => prev.filter((_, i) => i !== index));
+  const handleDelete = async (index) => {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this expense?"
+    );
+    if (!confirmed) return;
+
+    try {
+      const expenseToDelete = expenses[index];
+      const token = localStorage.getItem("token");
+
+      const response = await fetch(
+        `http://localhost:5000/expenses/delete/${expenseToDelete.id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: token ? `Bearer ${token}` : "",
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to delete expense");
+      }
+
+      fetchExpenses();
+    } catch (error) {
+      alert(error.message);
     }
   };
 
@@ -118,7 +120,7 @@ const Table = () => {
           >
             Reset
           </button>
-          <button className="btn btn-sm btn-success " onClick={openAddModal}>
+          <button className="btn btn-sm btn-success" onClick={openAddModal}>
             <span>Add Expense</span>
           </button>
         </div>
@@ -126,10 +128,7 @@ const Table = () => {
 
       <div
         className="table-responsive"
-        style={{
-          maxHeight: "300px",
-          overflowY: "auto",
-        }}
+        style={{ maxHeight: "300px", overflowY: "auto" }}
       >
         <table className="table table-bordered table-hover">
           <thead className="table-dark sticky-top">
@@ -143,31 +142,28 @@ const Table = () => {
           </thead>
           <tbody>
             {filteredExpenses.length > 0 ? (
-              filteredExpenses.map((expense) => {
-                const realIndex = expenses.indexOf(expense);
-                return (
-                  <tr key={realIndex}>
-                    <td>{expense.date}</td>
-                    <td>{expense.category}</td>
-                    <td>{expense.description}</td>
-                    <td className="text-end">{expense.amount}</td>
-                    <td>
-                      <button
-                        className="btn btn-sm btn-primary me-2"
-                        onClick={() => openEditModal(realIndex)}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        className="btn btn-sm btn-danger"
-                        onClick={() => handleDelete(realIndex)}
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })
+              filteredExpenses.map((expense, i) => (
+                <tr key={expense.id || i}>
+                  <td>{expense.date}</td>
+                  <td>{expense.category}</td>
+                  <td>{expense.description}</td>
+                  <td className="text-end">{expense.amount}</td>
+                  <td>
+                    <button
+                      className="btn btn-sm btn-primary me-2"
+                      onClick={() => openEditModal(expenses.indexOf(expense))}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      className="btn btn-sm btn-danger"
+                      onClick={() => handleDelete(expenses.indexOf(expense))}
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))
             ) : (
               <tr>
                 <td colSpan="5" className="text-center text-muted">
@@ -182,7 +178,7 @@ const Table = () => {
       <AddExpenseModal
         show={showAddModal}
         onClose={closeAddModal}
-        onSave={handleAddExpense}
+        onSuccess={handleAddExpenseSuccess}
       />
 
       {currentEditIndex !== null && (

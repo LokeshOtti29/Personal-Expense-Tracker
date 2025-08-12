@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useNavigate } from "react-router-dom";
 
 const schema = z.object({
   firstName: z.string().min(1, { message: "First name is required" }),
@@ -24,6 +25,7 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
+  const navigate = useNavigate();
 
   const onSubmit = async (data) => {
     setLoading(true);

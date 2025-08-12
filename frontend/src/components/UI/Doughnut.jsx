@@ -4,12 +4,12 @@ import { Doughnut as DoughnutChart } from "react-chartjs-2";
 
 ChartJS.register(Tooltip, Legend, Title, ArcElement);
 
-const Doughnut = () => {
+const Doughnut = ({ data }) => {
   const categoryData = {
-    labels: ["Food", "Rent", "Travel", "Shopping", "Others"],
+    labels: data?.map((item) => item.category) || [],
     datasets: [
       {
-        data: [300, 500, 100, 200, 150],
+        data: data?.map((item) => item.total) || [],
         backgroundColor: [
           "#FF6384",
           "#36A2EB",

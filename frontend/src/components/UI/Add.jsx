@@ -1,16 +1,19 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 
 const categories = ["Food", "Rent", "Travel", "Shopping", "Others"];
 
-const AddExpenseModal = ({ show, onClose, onSave }) => {
-  const [newExpense, setNewExpense] = React.useState({
+const AddExpenseModal = ({ show, onClose, onSuccess }) => {
+  const [newExpense, setNewExpense] = useState({
     date: "",
     category: categories[0],
     description: "",
     amount: "",
   });
 
-  React.useEffect(() => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
     if (show) {
       setNewExpense({
         date: "",
@@ -18,6 +21,8 @@ const AddExpenseModal = ({ show, onClose, onSave }) => {
         description: "",
         amount: "",
       });
+      setError(null);
+      setLoading(false);
     }
   }, [show]);
 
@@ -29,7 +34,7 @@ const AddExpenseModal = ({ show, onClose, onSave }) => {
     }));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (
       !newExpense.date ||
       !newExpense.description ||
@@ -39,7 +44,34 @@ const AddExpenseModal = ({ show, onClose, onSave }) => {
       alert("Please fill all fields");
       return;
     }
-    onSave(newExpense);
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const token = localStorage.getItem("token");
+
+      const response = await fetch("http://localhost:5000/expenses/add", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token ? `Bearer ${token}` : "",
+        },
+        body: JSON.stringify(newExpense),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to add expense");
+      }
+
+      onSuccess(newExpense);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!show) return null;
@@ -62,6 +94,11 @@ const AddExpenseModal = ({ show, onClose, onSave }) => {
             ></button>
           </div>
           <div className="modal-body">
+            {error && (
+              <div className="alert alert-danger" role="alert">
+                {error}
+              </div>
+            )}
             <div className="mb-3">
               <label className="form-label">Date</label>
               <input
@@ -70,6 +107,7 @@ const AddExpenseModal = ({ show, onClose, onSave }) => {
                 className="form-control"
                 value={newExpense.date}
                 onChange={handleChange}
+                disabled={loading}
               />
             </div>
             <div className="mb-3">
@@ -79,6 +117,7 @@ const AddExpenseModal = ({ show, onClose, onSave }) => {
                 className="form-select"
                 value={newExpense.category}
                 onChange={handleChange}
+                disabled={loading}
               >
                 {categories.map((cat) => (
                   <option key={cat} value={cat}>
@@ -95,6 +134,7 @@ const AddExpenseModal = ({ show, onClose, onSave }) => {
                 className="form-control"
                 value={newExpense.description}
                 onChange={handleChange}
+                disabled={loading}
               />
             </div>
             <div className="mb-3">
@@ -106,15 +146,24 @@ const AddExpenseModal = ({ show, onClose, onSave }) => {
                 min="0"
                 value={newExpense.amount}
                 onChange={handleChange}
+                disabled={loading}
               />
             </div>
           </div>
           <div className="modal-footer">
-            <button className="btn btn-secondary" onClick={onClose}>
+            <button
+              className="btn btn-secondary"
+              onClick={onClose}
+              disabled={loading}
+            >
               Cancel
             </button>
-            <button className="btn btn-success" onClick={handleSave}>
-              Add Expense
+            <button
+              className="btn btn-success"
+              onClick={handleSave}
+              disabled={loading}
+            >
+              {loading ? "Adding..." : "Add Expense"}
             </button>
           </div>
         </div>
