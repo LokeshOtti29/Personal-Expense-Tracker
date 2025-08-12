@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -21,9 +21,42 @@ const Register = () => {
     resolver: zodResolver(schema),
   });
 
-  const onSubmit = (data) => {
-    console.log("Registration Data:", data);
-    alert("Registration successful!");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
+
+  const onSubmit = async (data) => {
+    setLoading(true);
+    setError("");
+    setSuccessMsg("");
+
+    try {
+      const response = await fetch("http://localhost:5000/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          firstname: data.firstName,
+          lastname: data.lastName,
+          email: data.email,
+          password: data.password,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        setSuccessMsg("Registration successful! You can now log in.");
+        navigate("/login");
+      } else {
+        setError(result.message || "Registration failed");
+      }
+    } catch (err) {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -31,6 +64,11 @@ const Register = () => {
       <h2 className="text-center mb-4">Sign Up</h2>
       <div className="card shadow-sm">
         <div className="card-body">
+          {error && <div className="alert alert-danger">{error}</div>}
+          {successMsg && (
+            <div className="alert alert-success">{successMsg}</div>
+          )}
+
           <form onSubmit={handleSubmit(onSubmit)}>
             <div className="row">
               <div className="col-md-6 mb-3">
@@ -93,20 +131,12 @@ const Register = () => {
               )}
             </div>
 
-            <div className="form-check mb-3">
-              <input
-                className="form-check-input"
-                type="checkbox"
-                id="subscribe"
-                {...register("subscribe")}
-              />
-              <label className="form-check-label" htmlFor="subscribe">
-                Subscribe to our newsletter
-              </label>
-            </div>
-
-            <button type="submit" className="btn btn-primary w-100">
-              Sign Up
+            <button
+              type="submit"
+              className="btn btn-primary w-100"
+              disabled={loading}
+            >
+              {loading ? "Registering..." : "Sign Up"}
             </button>
           </form>
         </div>

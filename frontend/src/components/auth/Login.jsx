@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useNavigate, Link } from "react-router-dom";
 
 const schema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
@@ -10,7 +11,10 @@ const schema = z.object({
     .min(6, { message: "Password must be at least 6 characters" }),
   remember: z.boolean().optional(),
 });
+
 const Login = () => {
+  const navigate = useNavigate();
+
   const {
     register,
     handleSubmit,
@@ -19,9 +23,36 @@ const Login = () => {
     resolver: zodResolver(schema),
   });
 
-  const onSubmit = (data) => {
-    console.log("Form Data:", data);
-    alert("Login successful!");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const onSubmit = async (data) => {
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch("http://localhost:5000/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: data.email,
+          password: data.password,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        localStorage.setItem("token", result.token);
+        navigate("/"); // Redirect to home page after successful login
+      } else {
+        setError(result.message || "Login failed");
+      }
+    } catch {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -29,6 +60,8 @@ const Login = () => {
       <div className="card shadow-sm">
         <div className="card-body">
           <h4 className="text-center mb-4">Login</h4>
+
+          {error && <div className="alert alert-danger">{error}</div>}
 
           <form onSubmit={handleSubmit(onSubmit)}>
             <div className="form-outline mb-3">
@@ -60,35 +93,18 @@ const Login = () => {
                 </div>
               )}
             </div>
-            <div className="row mb-3">
-              <div className="col d-flex align-items-center">
-                <div className="form-check">
-                  <input
-                    className="form-check-input"
-                    type="checkbox"
-                    id="remember"
-                    {...register("remember")}
-                  />
-                  <label className="form-check-label" htmlFor="remember">
-                    Remember me
-                  </label>
-                </div>
-              </div>
-              <div className="col text-end">
-                <a href="#!">Forgot password?</a>
-              </div>
-            </div>
 
             <button
               type="submit"
               className="btn btn-primary btn-block mb-3 w-100"
+              disabled={loading}
             >
-              Sign in
+              {loading ? "Signing in..." : "Sign in"}
             </button>
 
             <div className="text-center">
               <p>
-                Don't have Account? <a href="#!">Register</a>
+                Don't have an account? <Link to="/register">Register</Link>
               </p>
             </div>
           </form>
