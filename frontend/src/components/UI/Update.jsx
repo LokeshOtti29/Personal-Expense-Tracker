@@ -45,7 +45,7 @@ const EditExpenseModal = ({ show, onClose, expense, onSave }) => {
       };
 
       const response = await fetch(
-        `http://localhost:5000/expenses/edit/${editExpense.id}`,
+        `${import.meta.env.VITE_LOCALHOST_URL}/expenses/edit/${editExpense.id}`,
         {
           method: "PUT",
           headers: {

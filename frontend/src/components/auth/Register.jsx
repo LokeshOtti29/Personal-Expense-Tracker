@@ -33,18 +33,21 @@ const Register = () => {
     setSuccessMsg("");
 
     try {
-      const response = await fetch("http://localhost:5000/auth/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          firstname: data.firstName,
-          lastname: data.lastName,
-          email: data.email,
-          password: data.password,
-        }),
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_LOCALHOST_URL}/auth/register`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            firstname: data.firstName,
+            lastname: data.lastName,
+            email: data.email,
+            password: data.password,
+          }),
+        }
+      );
 
       const result = await response.json();
 

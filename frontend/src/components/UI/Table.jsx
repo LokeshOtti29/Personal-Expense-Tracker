@@ -75,7 +75,9 @@ const Table = () => {
       const token = localStorage.getItem("token");
 
       const response = await fetch(
-        `http://localhost:5000/expenses/delete/${expenseToDelete.id}`,
+        `${import.meta.env.VITE_LOCALHOST_URL}/expenses/delete/${
+          expenseToDelete.id
+        }`,
         {
           method: "DELETE",
           headers: {

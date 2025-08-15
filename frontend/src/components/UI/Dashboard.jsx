@@ -11,11 +11,14 @@ const Dashboard = () => {
   useEffect(() => {
     async function fetchData() {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:5000/expenses/list", {
-        headers: {
-          Authorization: token ? `Bearer ${token}` : "",
-        },
-      });
+      const res = await fetch(
+        `${import.meta.env.VITE_LOCALHOST_URL}/expenses/list`,
+        {
+          headers: {
+            Authorization: token ? `Bearer ${token}` : "",
+          },
+        }
+      );
       const data = await res.json();
 
       if (res.ok) {
